@@ -1,0 +1,10 @@
+const {chromium}=require('playwright');
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844},deviceScaleFactor:2});
+ const errs=[];p.on('pageerror',e=>errs.push(e.message));
+ await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(500);await p.click('#bPlay');
+ await p.evaluate(()=>{const G=DBG.G;G.wl=5;G.stage=4;G.t=30;});
+ await p.evaluate(()=>{DBG.state='sim';for(let i=0;i<60*14;i++){DBG.P.tx=270+Math.sin(i/40)*150;DBG.update(1/60);}DBG.state='run';});
+ await p.waitForTimeout(300);await p.screenshot({path:'shots/mid.png'});
+ await p.evaluate(()=>{const G=DBG.G;G.t=G.levelTime;});
+ await p.evaluate(()=>{DBG.state='sim';for(let i=0;i<60*8;i++){DBG.P.tx=270;DBG.update(1/60);}DBG.state='run';});
+ await p.waitForTimeout(200);await p.screenshot({path:'shots/boss.png'});console.log(errs);await b.close();})();
