@@ -23,14 +23,14 @@ const SND={on:LS.get('hk_snd',true),ac:null,
 
 /* ================= DANE GRY ================= */
 const ET={
- drone:{r:14,hp:18,sc:50,exp:6,tok:.012,air:1},
- jet:{r:19,hp:46,sc:120,exp:12,tok:.03,air:1},
- gun:{r:30,hp:170,sc:350,exp:30,tok:.14,air:1},
- bomber:{r:44,hp:420,sc:900,exp:70,tok:.35,air:1,ex:76,ey:44},
- turret:{r:18,hp:60,sc:100,exp:10,tok:.03,gr:1},
- tank:{r:26,hp:150,sc:220,exp:20,tok:.08,gr:1,ex:22,ey:30},
- aa:{r:22,hp:100,sc:260,exp:25,tok:.1,gr:1},
- bunker:{r:38,hp:400,sc:600,exp:50,tok:.25,gr:1}
+ drone:{r:20,hp:18,sc:50,exp:6,tok:.012,air:1},
+ jet:{r:26,hp:46,sc:120,exp:12,tok:.03,air:1},
+ gun:{r:34,hp:170,sc:350,exp:30,tok:.14,air:1,ex:30,ey:48},
+ bomber:{r:50,hp:420,sc:900,exp:70,tok:.35,air:1,ex:78,ey:52},
+ turret:{r:26,hp:60,sc:100,exp:10,tok:.03,gr:1},
+ tank:{r:30,hp:150,sc:220,exp:20,tok:.08,gr:1,ex:24,ey:42},
+ aa:{r:30,hp:100,sc:260,exp:25,tok:.1,gr:1},
+ bunker:{r:42,hp:400,sc:600,exp:50,tok:.25,gr:1}
 };
 const GUN=[null,[[0,0]],[[-9,0],[9,0]],[[-9,0],[9,0],[-19,-.14],[19,.14]],null,[[-9,0],[9,0],[0,0],[-19,-.14],[19,.14]],null,null,[[-9,0],[9,0],[0,0],[-19,-.14],[19,.14],[-27,-.28],[27,.28]]];
 GUN[4]=GUN[3];GUN[6]=GUN[5];GUN[7]=GUN[5];
@@ -166,9 +166,10 @@ function pickup(it){
 
 /* ================= BOSS ================= */
 function spawnBoss(){
-  const st=G.stage,kind=(st-1)%4,sc=clamp(.62+.05*st,.62,.95);
+  const st=G.stage,kind=(st-1)%4,sc=clamp(.62+.05*st,.62,.95),s=sc/.95,im=sBoss(kind);
   const hp=24000*(1+.75*(st-1));
-  const b={t:'boss',kind,x:W/2,y:-220,hp,mhp:hp,r:120*sc,ex:138*sc,ey:104*sc,sc,age:0,hit:0,armor:.5,phase:0,x0:W/2,ph:0,a1:1.5,a2:3,a3:4,a4:6,a5:0,spin:0,air:true,name:BOSSN[kind]+' '+toRoman(st)};
+  const bw=im?im._w*s:280,bh=im?im._h*s:280;
+  const b={t:'boss',kind,x:W/2,y:-bh,hp,mhp:hp,r:.3*bh,ex:.4*bw,ey:.34*bh,sc,s,age:0,hit:0,armor:.5,phase:0,x0:W/2,ph:0,a1:1.5,a2:3,a3:4,a4:6,a5:0,spin:0,air:true,name:BOSSN[kind]+' '+toRoman(st)};
   G.boss=b;G.enemies.push(b);$('#boss').classList.add('on');$('#bossn').textContent=b.name;
 }
 const toRoman=n=>['','I','II','III','IV','V','VI','VII','VIII','IX','X'][n]||String(n);
@@ -209,16 +210,16 @@ function fire(dt){
   P.gcd-=dt;
   if(P.gcd<=0){P.gcd=wl>=8?.1:wl>=3?.13:.16;
     const dmg=(wl>=8?13:9)*dm;
-    for(const[dx,a]of GUN[wl])G.pb.push({x:P.x+dx,y:P.y-34,vx:Math.sin(a)*620,vy:-Math.cos(a)*620,dmg,r:4,gold:wl>=8});
+    for(const[dx,a]of GUN[wl])G.pb.push({x:P.x+dx,y:P.y-58,vx:Math.sin(a)*620,vy:-Math.cos(a)*620,dmg,r:4,gold:wl>=8});
     SND.p('gun');}
   if(wl>=4){P.mcd-=dt;
     if(P.mcd<=0){P.mcd=MISCD[wl];const n=MISN[wl]/2,hom=wl>=5;
-      for(const s of[-1,1])for(let i=0;i<n;i++)G.mis.push({x:P.x+s*(22+10*i),y:P.y+8,vx:s*(14+i*6),vy:-120,dmg:34*dm*(wl>=8?1.3:1),hom,t:0,s});
+      for(const s of[-1,1])for(let i=0;i<n;i++)G.mis.push({x:P.x+s*(PODS[wl][i%PODS[wl].length]*1.2+Math.floor(i/PODS[wl].length)*5),y:P.y-20+Math.floor(i/PODS[wl].length)*10,vx:s*(14+i*6),vy:-120,dmg:34*dm*(wl>=8?1.3:1),hom,t:0,s});
       SND.p('mis');}}
   const L=LASER[wl];G.laserOn=!!L;
   if(L){const xs=L.n===2?[-14,14]:[0];G.laserX=xs;G.laserW=L.w;G.laserHit.length=0;
     for(const lx of xs){const bx=P.x+lx;
-      for(const e of G.enemies){if(e.dead||e.y>P.y-34||e.y<-60)continue;
+      for(const e of G.enemies){if(e.dead||e.y>P.y-58||e.y<-60)continue;
         const hw=(e.ex||e.r)+L.w/2;if(Math.abs(e.x-bx)<hw){hurtE(e,L.dps*dm*dt,true);G.laserHit.push(e);}}}
     SND.p('laser');}
 }

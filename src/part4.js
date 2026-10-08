@@ -3,19 +3,19 @@
 let state='menu',lastT=0,hudT=0,T=0;
 function flashSpr(g,c,x,y,rot,s){g.save();g.globalCompositeOperation='lighter';g.globalAlpha=.55;blit(g,c,x,y,rot,1,s);g.restore();}
 function drawEnemy(g,e){
-  const st=G.stage,h=e.hit>0;let c;
+  const h=e.hit>0;let c,k;
   switch(e.t){
-   case 'drone':c=sDrone(st);blit(g,c,e.x,e.y);if(h)flashSpr(g,c,e.x,e.y);break;
-   case 'jet':c=sJet(st);blit(g,c,e.x,e.y);if(h)flashSpr(g,c,e.x,e.y);break;
-   case 'gun':c=sGun(st);blit(g,c,e.x,e.y);if(h)flashSpr(g,c,e.x,e.y);break;
-   case 'bomber':c=sBomber(st);blit(g,c,e.x,e.y);if(h)flashSpr(g,c,e.x,e.y);break;
-   case 'turret':c=sTurretBase(st);blit(g,c,e.x,e.y);blit(g,sBarrel(),e.x,e.y,e.ang);if(h)flashSpr(g,c,e.x,e.y);break;
-   case 'tank':c=sTank(st);blit(g,c,e.x,e.y);blit(g,sTankTur(st),e.x,e.y,e.ang);if(h)flashSpr(g,c,e.x,e.y);break;
-   case 'aa':c=sAA(st);blit(g,c,e.x,e.y);if(h)flashSpr(g,c,e.x,e.y);break;
-   case 'bunker':c=sBunker(st);blit(g,c,e.x,e.y);if(h)flashSpr(g,c,e.x,e.y);break;
-   case 'boss':c=sBoss(e.kind,st);blit(g,c,e.x,e.y,0,1,e.sc*1.0);if(e.hit>0)flashSpr(g,c,e.x,e.y,0,e.sc);break;
+   case 'drone':c=sDrone();k='drone';break;case 'jet':c=sJet();k='jet';break;case 'gun':c=sGun();k='gunship';break;case 'bomber':c=sBomber();k='bomber';break;
+   case 'turret':c=sTurretBase();k='turret';break;case 'tank':c=sTank();k='tank';break;case 'aa':c=sAA();k='aa';break;case 'bunker':c=sBunker();k='bunker';break;
+   case 'boss':c=sBoss(e.kind);k='boss'+(e.kind+1);break;
   }
-  if(e.t!=='boss'&&e.mhp>ET[e.t].hp*1.0&&e.hp<e.mhp&&e.t!=='drone'&&e.t!=='jet'){const w=e.r*1.6;g.fillStyle='rgba(0,0,0,.5)';g.fillRect(e.x-w/2,e.y-e.r-12,w,4);g.fillStyle='#ff5a4a';g.fillRect(e.x-w/2,e.y-e.r-12,w*clamp(e.hp/e.mhp,0,1),4);}
+  if(!c)return;
+  const s=e.t==='boss'?e.s:1;
+  shad(g,k,e.x,e.y,0,s,e.air?18:5,e.air?30:8,e.air?.2:.28);
+  blit(g,c,e.x,e.y,0,1,s);
+  if(e.t==='turret'){const bi=sBarrel();g.save();g.translate(e.x+1,e.y-5);g.rotate(e.ang+Math.PI/2);g.drawImage(bi,-bi._w*.1,-bi._h/2,bi._w,bi._h);g.restore();}
+  if(h)flashSpr(g,c,e.x,e.y,0,s);
+  if(e.t!=='boss'&&e.hp<e.mhp&&ET[e.t].hp>100){const w=e.r*1.6;g.fillStyle='rgba(0,0,0,.5)';g.fillRect(e.x-w/2,e.y-e.r-12,w,4);g.fillStyle='#ff5a4a';g.fillRect(e.x-w/2,e.y-e.r-12,w*clamp(e.hp/e.mhp,0,1),4);}
 }
 function render(){
   const g=ctx;g.setTransform(K,0,0,K,0,0);
@@ -35,7 +35,7 @@ function render(){
   if(G.laserOn&&G.mode==='play'){
     let top=0;for(const e of G.laserHit)top=Math.max(top,e.y+(e.ey||e.r)*.5);
     const L=LASER[G.wl];
-    for(const lx of G.laserX){const x=P.x+lx,y1=P.y-34,w=L.w*(.9+.15*Math.sin(T*60));
+    for(const lx of G.laserX){const x=P.x+lx,y1=P.y-58,w=L.w*(.9+.15*Math.sin(T*60));
       g.save();g.globalCompositeOperation='lighter';
       g.fillStyle=lg(g,x-w,0,x+w,0,['rgba(60,200,255,0)','rgba(90,220,255,.55)','rgba(60,200,255,0)']);g.fillRect(x-w*1.6,top,w*3.2,y1-top);
       g.fillStyle='rgba(235,252,255,.95)';g.fillRect(x-w*.18,top,w*.36,y1-top);g.restore();
@@ -150,4 +150,5 @@ function loop(ts){
   render();
 }
 window.DBG={get G(){return G;},P,update,render,play,nextStage,get state(){return state;},set state(v){state=v;},hud,keys};
-resize();sndLbl();toMenu();requestAnimationFrame(loop);
+DBG.ready=false;
+loadAssets().then(()=>{DBG.ready=true;resize();sndLbl();toMenu();requestAnimationFrame(loop);});
