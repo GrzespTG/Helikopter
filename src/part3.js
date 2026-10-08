@@ -7,6 +7,8 @@ const SND={on:LS.get('hk_snd',true),ac:null,
     const s=a.createBufferSource();s.buffer=b;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=fc||800;const g=a.createGain();g.gain.value=v||.1;s.connect(f);f.connect(g);g.connect(a.destination);s.start(a.currentTime+(w||0));}catch(e){}},
   last:{},
   p(k){const now=performance.now();if(this.last[k]&&now-this.last[k]<({gun:70,hit:60,boom:50,mis:120}[k]||0))return;this.last[k]=now;
+    if(k==='laser'){this.lasT=now;if(this.bufs.laser)return;}
+    else if(this.KEY[k]&&this.bufs[this.KEY[k]]){this.bufPlay(this.KEY[k],this.GAIN[this.KEY[k]]);return;}
     switch(k){
      case 'gun':this.tone(520,.05,'square',.012,0,260);break;
      case 'mis':this.noise(.25,.05,1800);this.tone(180,.2,'sawtooth',.02,0,500);break;
@@ -22,23 +24,38 @@ const SND={on:LS.get('hk_snd',true),ac:null,
     }}};
 
 SND.res=function(){if(this.ac&&this.ac.state==='suspended'){try{this.ac.resume();}catch(e){}}};
-SND.start=function(){ // szum wirnika + muzyka
-  this.init();this.res();if(!this.on||!this.ac||this.lp)return;
-  try{const a=this.ac,n=a.sampleRate,b=a.createBuffer(1,n,a.sampleRate),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=Math.random()*2-1;
-    const s=a.createBufferSource();s.buffer=b;s.loop=true;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=240;
-    const g=a.createGain();g.gain.value=.06;const lfo=a.createOscillator();lfo.frequency.value=14;const lg=a.createGain();lg.gain.value=.05;
-    lfo.connect(lg);lg.connect(g.gain);s.connect(f);f.connect(g);g.connect(a.destination);s.start();lfo.start();this.lp={s,lfo,g};
-    this.mt=a.currentTime+.15;this.mi=0;this.mid=setInterval(()=>this.sched(),120);}catch(e){}
+SND.bufs={};SND.mode=null;SND.mus={};SND.lasT=0;
+SND.GAIN={gun:.5,missile:.7,explosion_small:.8,explosion_big:1,hit:.8,pickup:.7,levelup:.8,warning:.8,lose:.9};
+SND.KEY={gun:'gun',mis:'missile',boom:'explosion_small',big:'explosion_big',hit:'hit',pick:'pickup',lvl:'levelup',warn:'warning',lose:'lose'};
+SND.loadAudio=function(){
+  if(this.loaded||!this.ac||typeof AUDIO==='undefined')return;this.loaded=true;
+  for(const k of ['gun','missile','explosion_small','explosion_big','hit','pickup','levelup','warning','lose','laser','rotor']){
+    try{const s=atob(AUDIO[k].split(',')[1]),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);
+      const pr=this.ac.decodeAudioData(u.buffer,d=>{this.bufs[k]=d;},()=>{});if(pr&&pr.catch)pr.catch(()=>{});}catch(e){}}
+  for(const k of ['menu','game','boss']){try{const el=new Audio(AUDIO['music_'+k]);el.loop=true;el.preload='auto';el.volume=0;this.mus[k]=el;}catch(e){}}
+  if(!this.tid)this.tid=setInterval(()=>this.tick(),100);
 };
-SND.sched=function(){const a=this.ac;if(!a||!this.on)return;const boss=G&&G.boss,step=boss?.19:.25,v=boss?.034:.024;
-  const bs=[0,0,0,0,-4,-4,-2,-2],ar=[0,3,7,10,12,10,7,3];
-  while(this.mt<a.currentTime+.4){const i=this.mi++,w=Math.max(0,this.mt-a.currentTime);
-    if(i%2===0)this.tone(110*Math.pow(2,bs[(i>>3)%8]/12),step*1.8,'triangle',v*1.6,w);
-    this.tone(220*Math.pow(2,(ar[i%8]+bs[(i>>3)%8])/12),step*.9,'square',v*.5,w);
-    if(i%2===1)this.noise(.04,v*.7,5000,w);if(boss&&i%4===0)this.noise(.12,v*2,300,w);
-    this.mt+=step;}
+SND.bufPlay=function(k,gain,loop){
+  const d=this.bufs[k];if(!d||!this.ac||!this.on)return null;
+  try{const a=this.ac,s=a.createBufferSource(),g=a.createGain();s.buffer=d;s.loop=!!loop;g.gain.value=gain;s.connect(g);g.connect(a.destination);s.start();return{s,g};}catch(e){return null;}
 };
-SND.stop=function(){clearInterval(this.mid);this.mid=null;if(this.lp){try{this.lp.g.gain.setTargetAtTime(0,this.ac.currentTime,.08);const l=this.lp;setTimeout(()=>{try{l.s.stop();l.lfo.stop();}catch(e){}},400);}catch(e){}this.lp=null;}};
+SND.stopLoop=function(n){const l=this[n];if(!l)return;try{l.g.gain.setTargetAtTime(0,this.ac.currentTime,.05);setTimeout(()=>{try{l.s.stop();}catch(e){}},300);}catch(e){}this[n]=null;};
+SND.setMode=function(m){this.mode=m;};
+SND.tick=function(){
+  if(!this.ac)return;const on=this.on,run=this.mode==='run';
+  // szum wirnika w czasie lotu
+  if(run&&on&&!this.rl&&this.bufs.rotor)this.rl=this.bufPlay('rotor',.4,true);
+  else if((!run||!on)&&this.rl)this.stopLoop('rl');
+  // laser: pętla dopóki wiązka jest włączona
+  const las=on&&run&&performance.now()-this.lasT<250;
+  if(las&&!this.ll&&this.bufs.laser)this.ll=this.bufPlay('laser',.45,true);else if(!las&&this.ll)this.stopLoop('ll');
+  // muzyka: menu / lot / boss
+  let want=null;if(on){if(run)want=(G&&G.boss&&G.mode!=='clear')?'boss':'game';else if(this.mode==='menu')want='menu';}
+  for(const k in this.mus){const el=this.mus[k],t=(k===want)?.4:0;let v=el.volume;
+    v=v<t?Math.min(t,v+.05):Math.max(t,v-.06);try{el.volume=v;if(t>0&&el.paused)el.play().catch(()=>{});else if(t===0&&v<=.001&&!el.paused)el.pause();}catch(e){}}
+};
+SND.start=function(){this.init();this.res();this.loadAudio();this.setMode('run');};
+SND.stop=function(){this.setMode('menu');};
 
 /* ================= DANE GRY ================= */
 const ET={

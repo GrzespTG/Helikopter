@@ -14,3 +14,6 @@ Testy: `NODE_PATH=... node tests/smoke.js`, `tests/balance.js` (Playwright).
 
 ## Grafika
 Grafiki (helikopter, wirnik, skrzydła z rakietami, wrogowie, bossowie, żetony, 5 kafli terenu) pochodzą z arkuszy wygenerowanych przez użytkownika. `tools/extract.py` usuwa z nich wypaloną szachownicę i wycina sprity, `tools/build_assets.py` skaluje je i pakuje do `src/assets.js` (base64). Teren to kafle przewijane pionowo, co drugi odbity, żeby szwy się łączyły.
+
+## Dźwięk
+Efekty, pętle (wirnik, laser) i muzyka (menu, lot, boss) w `audio/` (wygenerowane w Gemini), pakowane do `src/audio.js`. Muzyka menu: Orbit of Honor, lot: Hostile Engagement, boss: Siege Engine.

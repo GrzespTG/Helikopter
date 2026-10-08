@@ -93,7 +93,7 @@ function scoreSave(){if(G.score<=0||G.saved)return;G.saved=true;const a=scoresGe
 function fillBest(){const a=scoresGet();$('#best').textContent=a.length?'Rekord: '+a[0].s.toLocaleString('pl-PL')+' (poziom '+a[0].st+')':'Jeszcze nie ma rekordów';}
 function kvHtml(rows){return rows.map(r=>'<span>'+r[0]+'</span><b>'+r[1]+'</b>').join('');}
 function toMenu(){SND.stop();state='menu';newRun();G.wl=3;G.mode='demo';inGameUI(false);fillBest();show('menu');}
-function play(){SND.stop();SND.init();SND.start();newRun();state='run';inGameUI(true);show(null);startStage();hud();}
+function play(){SND.init();SND.loadAudio();SND.setMode('run');newRun();state='run';inGameUI(true);show(null);startStage();hud();}
 function gameOver(){
   SND.stop();state='over';scoreSave();inGameUI(false);
   $('#ovS').textContent=Math.round(G.score).toLocaleString('pl-PL');
@@ -107,9 +107,9 @@ function stageClear(){
   $('#clK').innerHTML=kvHtml([['Boss','pokonany'],['Poziom pilota',G.plvl],['Broń',WNAME[G.wl]],['Zestrzelone cele',G.stats.kills]]);
   SND.p('win');inGameUI(false);show('clear');
 }
-function nextStage(){SND.start();G.stage++;P.hp=Math.min(P.maxhp,P.hp+P.maxhp*.4);state='run';inGameUI(true);show(null);startStage();hud();}
+function nextStage(){SND.setMode('run');G.stage++;P.hp=Math.min(P.maxhp,P.hp+P.maxhp*.4);state='run';inGameUI(true);show(null);startStage();hud();}
 function pauseGame(){if(state!=='run'||G.mode!=='play'&&G.mode!=='bossdie')return;state='pause';SND.stop();show('pausep');}
-function resumeGame(){if(state!=='pause')return;state='run';SND.start();show(null);lastT=0;}
+function resumeGame(){if(state!=='pause')return;state='run';SND.setMode('run');show(null);lastT=0;}
 $('#bPlay').onclick=play;
 $('#bHow').onclick=()=>show('how');
 $('#bScores').onclick=()=>{const a=scoresGet();$('#slist').innerHTML=a.length?a.map((r,i)=>'<div class="hs"><div class="p">'+(i+1)+'</div><div class="n"><b>'+r.s.toLocaleString('pl-PL')+'</b><small>poziom '+r.st+' · '+(r.dn||'Normalny')+' · '+r.d+'</small></div></div>').join(''):'<p>Jeszcze nie ma rekordów. Zagraj pierwszą partię.</p>';show('scores');};
@@ -117,7 +117,7 @@ document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>show('menu'));
 $('#bDiff').onclick=()=>{setDiff(DIFI+1);diffLbl();fillBest();};
 function diffLbl(){$('#bDiff').textContent='Trudność: '+DIF.n;}
 $('#bSound').onclick=()=>{SND.on=!SND.on;LS.set('hk_snd',SND.on);SND.init();if(!SND.on)SND.stop();sndLbl();};
-['pointerdown','touchstart','keydown'].forEach(ev=>addEventListener(ev,()=>{SND.init();SND.res();},{passive:true}));
+['pointerdown','touchstart','keydown'].forEach(ev=>addEventListener(ev,()=>{SND.init();SND.res();SND.loadAudio();},{passive:true}));
 function sndLbl(){$('#bSound').textContent='Dźwięk: '+(SND.on?'włączony':'wyłączony');}
 $('#pause').onclick=pauseGame;
 $('#bResume').onclick=resumeGame;

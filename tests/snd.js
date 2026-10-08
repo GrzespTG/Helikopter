@@ -1,8 +1,12 @@
 const {chromium}=require('playwright');
 (async()=>{const b=await chromium.launch({args:['--autoplay-policy=no-user-gesture-required']});const p=await b.newPage({viewport:{width:390,height:844}});
- const errs=[];p.on('pageerror',e=>errs.push(e.message));
- await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(600);await p.click('#bPlay');await p.waitForTimeout(2500);
- console.log(await p.evaluate(()=>({st:SND.ac&&SND.ac.state,loop:!!SND.lp,mus:!!SND.mid,t:SND.ac&&SND.ac.currentTime.toFixed(1),notes:SND.mi})));
- await p.click('#pause');await p.waitForTimeout(300);console.log(await p.evaluate(()=>({loop:!!SND.lp,mus:!!SND.mid})));
- await p.click('#bResume');await p.waitForTimeout(500);console.log(await p.evaluate(()=>({loop:!!SND.lp,mus:!!SND.mid})));
+ const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});
+ await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(800);
+ await p.mouse.click(200,300);await p.waitForTimeout(1500);
+ const st=()=>p.evaluate(()=>({ctx:SND.ac&&SND.ac.state,bufs:Object.keys(SND.bufs).length,mode:SND.mode,rotor:!!SND.rl,laser:!!SND.ll,mus:Object.fromEntries(Object.entries(SND.mus).map(([k,e])=>[k,[+e.volume.toFixed(2),e.paused]]))}));
+ console.log('menu',JSON.stringify(await st()));
+ await p.click('#bPlay');await p.waitForTimeout(2500);console.log('gra',JSON.stringify(await st()));
+ await p.evaluate(()=>{DBG.G.wl=6;});await p.waitForTimeout(1200);console.log('laser',JSON.stringify(await st()));
+ await p.evaluate(()=>{spawnBoss();});await p.waitForTimeout(3000);console.log('boss',JSON.stringify(await st()));
+ await p.click('#pause');await p.waitForTimeout(2500);console.log('pauza',JSON.stringify(await st()));
  console.log(errs);await b.close();})();
