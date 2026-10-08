@@ -21,6 +21,25 @@ const SND={on:LS.get('hk_snd',true),ac:null,
      case 'laser':this.tone(130,.09,'sawtooth',.018,0,150);break;
     }}};
 
+SND.res=function(){if(this.ac&&this.ac.state==='suspended'){try{this.ac.resume();}catch(e){}}};
+SND.start=function(){ // szum wirnika + muzyka
+  this.init();this.res();if(!this.on||!this.ac||this.lp)return;
+  try{const a=this.ac,n=a.sampleRate,b=a.createBuffer(1,n,a.sampleRate),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=Math.random()*2-1;
+    const s=a.createBufferSource();s.buffer=b;s.loop=true;const f=a.createBiquadFilter();f.type='lowpass';f.frequency.value=240;
+    const g=a.createGain();g.gain.value=.06;const lfo=a.createOscillator();lfo.frequency.value=14;const lg=a.createGain();lg.gain.value=.05;
+    lfo.connect(lg);lg.connect(g.gain);s.connect(f);f.connect(g);g.connect(a.destination);s.start();lfo.start();this.lp={s,lfo,g};
+    this.mt=a.currentTime+.15;this.mi=0;this.mid=setInterval(()=>this.sched(),120);}catch(e){}
+};
+SND.sched=function(){const a=this.ac;if(!a||!this.on)return;const boss=G&&G.boss,step=boss?.19:.25,v=boss?.034:.024;
+  const bs=[0,0,0,0,-4,-4,-2,-2],ar=[0,3,7,10,12,10,7,3];
+  while(this.mt<a.currentTime+.4){const i=this.mi++,w=Math.max(0,this.mt-a.currentTime);
+    if(i%2===0)this.tone(110*Math.pow(2,bs[(i>>3)%8]/12),step*1.8,'triangle',v*1.6,w);
+    this.tone(220*Math.pow(2,(ar[i%8]+bs[(i>>3)%8])/12),step*.9,'square',v*.5,w);
+    if(i%2===1)this.noise(.04,v*.7,5000,w);if(boss&&i%4===0)this.noise(.12,v*2,300,w);
+    this.mt+=step;}
+};
+SND.stop=function(){clearInterval(this.mid);this.mid=null;if(this.lp){try{this.lp.g.gain.setTargetAtTime(0,this.ac.currentTime,.08);const l=this.lp;setTimeout(()=>{try{l.s.stop();l.lfo.stop();}catch(e){}},400);}catch(e){}this.lp=null;}};
+
 /* ================= DANE GRY ================= */
 const ET={
  drone:{r:20,hp:18,sc:50,exp:6,tok:.012,air:1},

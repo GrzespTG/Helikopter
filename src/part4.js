@@ -92,31 +92,32 @@ function scoresGet(){return LS.get('hk_scores',[]);}
 function scoreSave(){if(G.score<=0||G.saved)return;G.saved=true;const a=scoresGet();a.push({s:Math.round(G.score),st:G.stage,dn:DIF.n,d:new Date().toLocaleDateString('pl-PL')});a.sort((x,y)=>y.s-x.s);LS.set('hk_scores',a.slice(0,8));}
 function fillBest(){const a=scoresGet();$('#best').textContent=a.length?'Rekord: '+a[0].s.toLocaleString('pl-PL')+' (poziom '+a[0].st+')':'Jeszcze nie ma rekordów';}
 function kvHtml(rows){return rows.map(r=>'<span>'+r[0]+'</span><b>'+r[1]+'</b>').join('');}
-function toMenu(){state='menu';newRun();G.wl=3;G.mode='demo';inGameUI(false);fillBest();show('menu');}
-function play(){SND.init();newRun();state='run';inGameUI(true);show(null);startStage();hud();}
+function toMenu(){SND.stop();state='menu';newRun();G.wl=3;G.mode='demo';inGameUI(false);fillBest();show('menu');}
+function play(){SND.stop();SND.init();SND.start();newRun();state='run';inGameUI(true);show(null);startStage();hud();}
 function gameOver(){
-  state='over';scoreSave();inGameUI(false);
+  SND.stop();state='over';scoreSave();inGameUI(false);
   $('#ovS').textContent=Math.round(G.score).toLocaleString('pl-PL');
   $('#ovK').innerHTML=kvHtml([['Poziom',G.stage],['Poziom pilota',G.plvl],['Zestrzelone cele',G.stats.kills],['Pokonane bossy',G.stats.bosses],['Zebrane żetony',G.stats.tokens]]);
   show('over');
 }
 function stageClear(){
-  state='clear';
+  SND.stop();state='clear';
   $('#clT').textContent='Poziom '+G.stage+' ukończony';
   $('#clS').textContent=Math.round(G.score).toLocaleString('pl-PL');
   $('#clK').innerHTML=kvHtml([['Boss','pokonany'],['Poziom pilota',G.plvl],['Broń',WNAME[G.wl]],['Zestrzelone cele',G.stats.kills]]);
   SND.p('win');inGameUI(false);show('clear');
 }
-function nextStage(){G.stage++;P.hp=Math.min(P.maxhp,P.hp+P.maxhp*.4);state='run';inGameUI(true);show(null);startStage();hud();}
-function pauseGame(){if(state!=='run'||G.mode!=='play'&&G.mode!=='bossdie')return;state='pause';show('pausep');}
-function resumeGame(){if(state!=='pause')return;state='run';show(null);lastT=0;}
+function nextStage(){SND.start();G.stage++;P.hp=Math.min(P.maxhp,P.hp+P.maxhp*.4);state='run';inGameUI(true);show(null);startStage();hud();}
+function pauseGame(){if(state!=='run'||G.mode!=='play'&&G.mode!=='bossdie')return;state='pause';SND.stop();show('pausep');}
+function resumeGame(){if(state!=='pause')return;state='run';SND.start();show(null);lastT=0;}
 $('#bPlay').onclick=play;
 $('#bHow').onclick=()=>show('how');
 $('#bScores').onclick=()=>{const a=scoresGet();$('#slist').innerHTML=a.length?a.map((r,i)=>'<div class="hs"><div class="p">'+(i+1)+'</div><div class="n"><b>'+r.s.toLocaleString('pl-PL')+'</b><small>poziom '+r.st+' · '+(r.dn||'Normalny')+' · '+r.d+'</small></div></div>').join(''):'<p>Jeszcze nie ma rekordów. Zagraj pierwszą partię.</p>';show('scores');};
 document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>show('menu'));
 $('#bDiff').onclick=()=>{setDiff(DIFI+1);diffLbl();fillBest();};
 function diffLbl(){$('#bDiff').textContent='Trudność: '+DIF.n;}
-$('#bSound').onclick=()=>{SND.on=!SND.on;LS.set('hk_snd',SND.on);SND.init();sndLbl();};
+$('#bSound').onclick=()=>{SND.on=!SND.on;LS.set('hk_snd',SND.on);SND.init();if(!SND.on)SND.stop();sndLbl();};
+['pointerdown','touchstart','keydown'].forEach(ev=>addEventListener(ev,()=>{SND.init();SND.res();},{passive:true}));
 function sndLbl(){$('#bSound').textContent='Dźwięk: '+(SND.on?'włączony':'wyłączony');}
 $('#pause').onclick=pauseGame;
 $('#bResume').onclick=resumeGame;
