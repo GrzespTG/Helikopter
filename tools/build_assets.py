@@ -27,7 +27,16 @@ put('rotor',fit(load('rotor'),longest=330))
 for i in range(1,5): put('wing%d'%i,fit(load('wing%d'%i),width=230,flipv=True))
 # wrogowie powietrzni (nos w dół)
 put('drone',fit(load('drone'),longest=116));put('jet',fit(load('jet'),longest=180))
-put('gunship',fit(load('gunship'),longest=250,rot=180));put('bomber',fit(load('bomber'),longest=380,rot=180))
+import colorsys
+def tint(im):
+    a=np.asarray(im).astype(float)/255;rgb=a[:,:,:3];out=np.zeros_like(rgb)
+    mx=rgb.max(2);mn=rgb.min(2);v=mx;s=np.where(mx>0,(mx-mn)/np.maximum(mx,1e-6),0)
+    # kolor czerwono-bordowy, zachowanie jasności i detalu
+    lum=rgb.mean(2)
+    out[:,:,0]=np.clip(lum*1.25+.10,0,1);out[:,:,1]=lum*.55;out[:,:,2]=lum*.55
+    return Image.fromarray(np.dstack([(out*255).astype(np.uint8),(a[:,:,3]*255).astype(np.uint8)]),'RGBA')
+put('gunship',fit(tint(load('heli')),height=262,rot=180))
+put('erotor',fit(tint(load('rotor')),longest=200));put('bomber',fit(load('bomber'),longest=380,rot=180))
 # naziemni
 put('turret',fit(load('turret'),longest=132));put('barrel',fit(load('barrel') if False else Image.open(SRC+'barrel.png'),longest=150))
 put('tank',fit(load('tank'),height=196));put('aa',fit(load('aa'),height=172));put('bunker',fit(load('bunker'),width=190))

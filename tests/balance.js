@@ -2,7 +2,7 @@ const {chromium}=require('playwright');
 (async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});
  const errs=[];p.on('pageerror',e=>errs.push(e.message));
  await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(400);
- for(const skill of [1,.5,0]){
+ for(const [dif,skill] of [[0,.5],[1,.5],[2,.5],[3,.5],[3,1]]){await p.evaluate(d=>setDiff(d),dif);
  const r=await p.evaluate((skill)=>{
   DBG.play();DBG.state='sim';const G=DBG.G,P=DBG.P;
   const out=[];let g=0;
@@ -22,5 +22,5 @@ const {chromium}=require('playwright');
     out.push({st,res:DBG.state,t:Math.round(G.time-t0),boss:bT&&Math.round(G.time-bT),minhp:+minhp.toFixed(2),wl:G.wl,pl:G.plvl});
     if(DBG.state==='over')break;}
   return out;},skill);
- console.log('skill',skill);for(const x of r)console.log(JSON.stringify(x));}
+ console.log('trudnosc',dif,'skill',skill);for(const x of r)console.log(JSON.stringify(x));}
  console.log(errs);await b.close();})();

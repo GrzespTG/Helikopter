@@ -25,7 +25,7 @@ const SND={on:LS.get('hk_snd',true),ac:null,
 const ET={
  drone:{r:20,hp:18,sc:50,exp:6,tok:.012,air:1},
  jet:{r:26,hp:46,sc:120,exp:12,tok:.03,air:1},
- gun:{r:34,hp:170,sc:350,exp:30,tok:.14,air:1,ex:30,ey:48},
+ gun:{r:34,hp:170,sc:350,exp:30,tok:.14,air:1,ex:26,ey:44},
  bomber:{r:50,hp:420,sc:900,exp:70,tok:.35,air:1,ex:78,ey:52},
  turret:{r:26,hp:60,sc:100,exp:10,tok:.03,gr:1},
  tank:{r:30,hp:150,sc:220,exp:20,tok:.08,gr:1,ex:24,ey:42},
@@ -36,13 +36,20 @@ const GUN=[null,[[0,0]],[[-9,0],[9,0]],[[-9,0],[9,0],[-19,-.14],[19,.14]],null,[
 GUN[4]=GUN[3];GUN[6]=GUN[5];GUN[7]=GUN[5];
 const MISN=[0,0,0,0,2,4,4,6,8],MISCD=[0,0,0,0,1.15,1.0,1.0,.85,.7];
 const LASER=[0,0,0,0,0,0,{w:10,dps:120,n:1},{w:16,dps:190,n:1},{w:13,dps:240,n:2}];
+const DIFFS=[
+ {n:'Łatwy',exp:1.35,tok:1.4,dmg:.75,hp:.85,sc:.8,pity:.8,rate:.9},
+ {n:'Normalny',exp:1,tok:1,dmg:1,hp:1,sc:1,pity:1,rate:1},
+ {n:'Trudny',exp:.75,tok:.65,dmg:1.3,hp:1.2,sc:1.3,pity:1.45,rate:1.15},
+ {n:'Koszmar',exp:.6,tok:.45,dmg:1.45,hp:1.35,sc:1.6,pity:2,rate:1.3}];
+let DIFI=clamp(LS.get('hk_diff',1),0,3),DIF=DIFFS[DIFI];
+function setDiff(i){DIFI=((i%4)+4)%4;DIF=DIFFS[DIFI];LS.set('hk_diff',DIFI);}
 let G=null;
 const P={x:W/2,y:H*.78,tx:W/2,ty:H*.78,vx:0,hp:100,maxhp:100,gcd:0,mcd:0,r:11};
 const keys={};
 const expNeed=l=>Math.round(60*Math.pow(1.38,l-1));
 const dmgMul=()=>1+.08*(G.plvl-1);
 const diff=()=>(G.stage-1)*.35+clamp(G.t/G.levelTime,0,1)*.25;
-const hpMul=()=>1+.25*(G.stage-1)+.15*clamp(G.t/G.levelTime,0,1);
+const hpMul=()=>(1+.25*(G.stage-1)+.15*clamp(G.t/G.levelTime,0,1))*DIF.hp;
 const scrollSpd=()=>(95+8*Math.min(G.stage,6))*(G.boss?.6:1);
 
 function newRun(){
@@ -61,7 +68,7 @@ function sCloud(){return spr('cloud',200,120,g=>{for(let i=0;i<9;i++){const x=rr
 
 /* ================= POCISKI I EFEKTY ================= */
 function eShot(x,y,ang,sp,o){G.eb.push(Object.assign({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,r:6,dmg:dmgE(),kind:'n',life:8},o||{}));}
-const dmgE=()=>Math.min(40,10+2.2*G.stage);
+const dmgE=()=>Math.min(40,10+2.2*G.stage)*DIF.dmg;
 const bSpd=()=>Math.min(330,185+11*G.stage);
 function aimAng(x,y){return Math.atan2(P.y-y,P.x-x);}
 function boom(x,y,s,col){
@@ -135,16 +142,16 @@ function hurtE(e,amt,laser){
 function killE(e){
   if(e.dead)return;e.dead=true;
   if(e.t==='boss'){bossDown(e);return;}
-  const d=ET[e.t];G.score+=Math.round(d.sc*(1+.1*(G.stage-1)));gainExp(d.exp);G.stats.kills++;
+  const d=ET[e.t];G.score+=Math.round(d.sc*(1+.1*(G.stage-1))*DIF.sc);gainExp(d.exp);G.stats.kills++;
   boom(e.x,e.y,d.r*(e.t==='bomber'?2.4:2.1),e.gr?'255,160,60':'255,200,90');
   // żeton ulepszenia lub naprawa
-  let ch=d.tok;if(G.noTok>(G.wl<4?22:G.wl<6?60:90)&&ch>=.03)ch=1;
+  let ch=d.tok*DIF.tok;if(G.noTok>(G.wl<4?22:G.wl<6?60:90)*DIF.pity&&d.tok>=.03)ch=1;
   if(RND()<ch){G.items.push({type:'tok',x:e.x,y:e.y,t:0});G.noTok=0;}
-  else if(e.gr&&RND()<.07)G.items.push({type:'rep',x:e.x,y:e.y,t:0});
-  else if(!e.gr&&RND()<.03)G.items.push({type:'rep',x:e.x,y:e.y,t:0});
+  else if(e.gr&&RND()<.07*DIF.tok)G.items.push({type:'rep',x:e.x,y:e.y,t:0});
+  else if(!e.gr&&RND()<.03*DIF.tok)G.items.push({type:'rep',x:e.x,y:e.y,t:0});
 }
 function gainExp(n){
-  G.exp+=n;
+  G.exp+=n*DIF.exp;
   while(G.exp>=expNeed(G.plvl)){G.exp-=expNeed(G.plvl);G.plvl++;const old=P.maxhp;P.maxhp=100+12*(G.plvl-1);P.hp=Math.min(P.maxhp,P.hp+P.maxhp-old+P.maxhp*.2);
     msg('Poziom pilota '+G.plvl,'więcej życia i mocniejsze strzały');SND.p('lvl');}
 }
@@ -167,7 +174,7 @@ function pickup(it){
 /* ================= BOSS ================= */
 function spawnBoss(){
   const st=G.stage,kind=(st-1)%4,sc=clamp(.62+.05*st,.62,.95),s=sc/.95,im=sBoss(kind);
-  const hp=24000*(1+.75*(st-1));
+  const hp=24000*(1+.75*(st-1))*DIF.hp;
   const bw=im?im._w*s:280,bh=im?im._h*s:280;
   const b={t:'boss',kind,x:W/2,y:-bh,hp,mhp:hp,r:.3*bh,ex:.4*bw,ey:.34*bh,sc,s,age:0,hit:0,armor:.5,phase:0,x0:W/2,ph:0,a1:1.5,a2:3,a3:4,a4:6,a5:0,spin:0,air:true,name:BOSSN[kind]+' '+toRoman(st)};
   G.boss=b;G.enemies.push(b);$('#boss').classList.add('on');$('#bossn').textContent=b.name;
@@ -191,7 +198,7 @@ function updBoss(b,dt){
   $('#bossb i').style.width=(clamp(b.hp/b.mhp,0,1)*100)+'%';
 }
 function bossDown(b){
-  G.mode='bossdie';G.bdT=2.4;G.bx=b.x;G.by=b.y;G.eb.length=0;G.score+=4000*G.stage;gainExp(150*G.stage);G.stats.bosses++;
+  G.mode='bossdie';G.bdT=2.4;G.bx=b.x;G.by=b.y;G.eb.length=0;G.score+=Math.round(4000*G.stage*DIF.sc);gainExp(150*G.stage);G.stats.bosses++;
   G.items.push({type:'tok',x:b.x-30,y:b.y+40,t:0},{type:'rep',x:b.x+30,y:b.y+40,t:0});
   $('#boss').classList.remove('on');
 }
@@ -273,7 +280,7 @@ function update(dt){
     // reżyser fal
     if(!G.boss&&G.bossWarn<=0){
       if(G.t>=G.levelTime){G.bossWarn=3.2;$('#warn').classList.add('on');msg('UWAGA','nadlatuje boss');SND.p('warn');}
-      else{G.spawnT-=dt;if(G.spawnT<=0){G.spawnT=rr(.9,1.6)/(1+.45*diff());spawnWave();}}
+      else{G.spawnT-=dt;if(G.spawnT<=0){G.spawnT=rr(.9,1.6)/(1+.45*diff())/DIF.rate;spawnWave();}}
     }else if(G.bossWarn>0){G.bossWarn-=dt;if(G.bossWarn<=0){$('#warn').classList.remove('on');spawnBoss();}}
   }
   if(G.mode==='dying'){G.dyT-=dt;if(G.dyT<=0)gameOver();}

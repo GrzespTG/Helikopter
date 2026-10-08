@@ -48,3 +48,4 @@ const sToken=()=>IMG.token,sRepair=()=>IMG.repair;
 const sDrone=()=>IMG.drone,sJet=()=>IMG.jet,sGun=()=>IMG.gunship,sBomber=()=>IMG.bomber;
 const sTurretBase=()=>IMG.turret,sBarrel=()=>IMG.barrel,sTank=()=>IMG.tank,sAA=()=>IMG.aa,sBunker=()=>IMG.bunker;
 const sBoss=kind=>IMG['boss'+(kind+1)];
+const sERotor=()=>IMG.erotor;

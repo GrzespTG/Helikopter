@@ -14,6 +14,7 @@ function drawEnemy(g,e){
   shad(g,k,e.x,e.y,0,s,e.air?18:5,e.air?30:8,e.air?.2:.28);
   blit(g,c,e.x,e.y,0,1,s);
   if(e.t==='turret'){const bi=sBarrel();g.save();g.translate(e.x+1,e.y-5);g.rotate(e.ang+Math.PI/2);g.drawImage(bi,-bi._w*.1,-bi._h/2,bi._w,bi._h);g.restore();}
+  if(e.t==='gun'){const ro=sERotor();if(ro){g.save();g.translate(e.x,e.y+.163*c._h);g.fillStyle='rgba(255,170,170,.10)';g.beginPath();g.arc(0,0,40,0,7);g.fill();g.rotate(e.age*22+e.ph);g.globalAlpha=.85;const k=82/ro._w;g.drawImage(ro,-ro._w*k/2,-ro._h*k/2,ro._w*k,ro._h*k);g.restore();}}
   if(h)flashSpr(g,c,e.x,e.y,0,s);
   if(e.t!=='boss'&&e.hp<e.mhp&&ET[e.t].hp>100){const w=e.r*1.6;g.fillStyle='rgba(0,0,0,.5)';g.fillRect(e.x-w/2,e.y-e.r-12,w,4);g.fillStyle='#ff5a4a';g.fillRect(e.x-w/2,e.y-e.r-12,w*clamp(e.hp/e.mhp,0,1),4);}
 }
@@ -88,7 +89,7 @@ const OV=['menu','how','scores','pausep','clear','over'];
 function show(id){for(const o of OV)$('#'+o).classList.toggle('on',o===id);}
 function inGameUI(on){$('#hud').classList.toggle('on',on);$('#wpn').classList.toggle('on',on);if(!on){$('#boss').classList.remove('on');$('#warn').classList.remove('on');}}
 function scoresGet(){return LS.get('hk_scores',[]);}
-function scoreSave(){if(G.score<=0||G.saved)return;G.saved=true;const a=scoresGet();a.push({s:Math.round(G.score),st:G.stage,d:new Date().toLocaleDateString('pl-PL')});a.sort((x,y)=>y.s-x.s);LS.set('hk_scores',a.slice(0,8));}
+function scoreSave(){if(G.score<=0||G.saved)return;G.saved=true;const a=scoresGet();a.push({s:Math.round(G.score),st:G.stage,dn:DIF.n,d:new Date().toLocaleDateString('pl-PL')});a.sort((x,y)=>y.s-x.s);LS.set('hk_scores',a.slice(0,8));}
 function fillBest(){const a=scoresGet();$('#best').textContent=a.length?'Rekord: '+a[0].s.toLocaleString('pl-PL')+' (poziom '+a[0].st+')':'Jeszcze nie ma rekordów';}
 function kvHtml(rows){return rows.map(r=>'<span>'+r[0]+'</span><b>'+r[1]+'</b>').join('');}
 function toMenu(){state='menu';newRun();G.wl=3;G.mode='demo';inGameUI(false);fillBest();show('menu');}
@@ -111,8 +112,10 @@ function pauseGame(){if(state!=='run'||G.mode!=='play'&&G.mode!=='bossdie')retur
 function resumeGame(){if(state!=='pause')return;state='run';show(null);lastT=0;}
 $('#bPlay').onclick=play;
 $('#bHow').onclick=()=>show('how');
-$('#bScores').onclick=()=>{const a=scoresGet();$('#slist').innerHTML=a.length?a.map((r,i)=>'<div class="hs"><div class="p">'+(i+1)+'</div><div class="n"><b>'+r.s.toLocaleString('pl-PL')+'</b><small>poziom '+r.st+' · '+r.d+'</small></div></div>').join(''):'<p>Jeszcze nie ma rekordów. Zagraj pierwszą partię.</p>';show('scores');};
+$('#bScores').onclick=()=>{const a=scoresGet();$('#slist').innerHTML=a.length?a.map((r,i)=>'<div class="hs"><div class="p">'+(i+1)+'</div><div class="n"><b>'+r.s.toLocaleString('pl-PL')+'</b><small>poziom '+r.st+' · '+(r.dn||'Normalny')+' · '+r.d+'</small></div></div>').join(''):'<p>Jeszcze nie ma rekordów. Zagraj pierwszą partię.</p>';show('scores');};
 document.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>show('menu'));
+$('#bDiff').onclick=()=>{setDiff(DIFI+1);diffLbl();fillBest();};
+function diffLbl(){$('#bDiff').textContent='Trudność: '+DIF.n;}
 $('#bSound').onclick=()=>{SND.on=!SND.on;LS.set('hk_snd',SND.on);SND.init();sndLbl();};
 function sndLbl(){$('#bSound').textContent='Dźwięk: '+(SND.on?'włączony':'wyłączony');}
 $('#pause').onclick=pauseGame;
@@ -151,4 +154,4 @@ function loop(ts){
 }
 window.DBG={get G(){return G;},P,update,render,play,nextStage,get state(){return state;},set state(v){state=v;},hud,keys};
 DBG.ready=false;
-loadAssets().then(()=>{DBG.ready=true;resize();sndLbl();toMenu();requestAnimationFrame(loop);});
+loadAssets().then(()=>{DBG.ready=true;resize();sndLbl();diffLbl();toMenu();requestAnimationFrame(loop);});
